@@ -11,13 +11,17 @@
 
 - Attentive Experience Replay Class will be added
 
+- Contribution to Attentive Experience Replay Class (BAER) will be added
+
 - Additional environments will be added:
   - CartPole
   - Lunar Lander 
   - FlappyBird
   - Various Atari Games
 
-- Resuls, and plotting will be added.
+- Tests, Results, and plotting will be added.
+
+- Optional: Implementing DDQN style enhanced architectures will be implemented.
 
 ## References
 
