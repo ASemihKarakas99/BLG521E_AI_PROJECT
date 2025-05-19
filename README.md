@@ -19,6 +19,8 @@
   - FlappyBird
   - Various Atari Games
 
+- DQN Archirecture will be adjsuted so that it aligns with paper implementation.
+
 - Tests, Results, and plotting will be added.
 
 - Optional: Implementing DDQN style enhanced architectures will be implemented.
