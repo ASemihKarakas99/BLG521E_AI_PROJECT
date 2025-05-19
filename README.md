@@ -17,6 +17,8 @@
   - FlappyBird
   - Various Atari Games
 
+- Resuls, and plotting will be added.
+
 ## References
 
 ### Repositories
