@@ -28,7 +28,7 @@ class Agent:
             # print(hyperparameters)
 
         self.hyperparameter_set = hyperparameter_set
-
+        self.buffer_type = hyperparameters.get('buffer_type', 'uniform')  # 'uniform' or 'prioritized'
         # Hyperparameters (adjustable)
         self.env_id             = hyperparameters['env_id']
         self.learning_rate_a    = hyperparameters['learning_rate_a']        # learning rate (alpha)
@@ -84,11 +84,11 @@ class Agent:
 
         # Initialize replay memory
         # memory = ReplayMemory(self.replay_memory_size)
-        memory = ReplayBuffer(
-            state_size=num_states,
-            action_size=1,  # DQN uses discrete actions, so this is 1
-            buffer_size=self.replay_memory_size
-        )
+
+        if self.buffer_type == 'uniform':
+            memory = ReplayBuffer(num_states, 1, self.replay_memory_size)
+        elif self.buffer_type == 'prioritized':
+            memory = PrioritizedReplayBuffer(num_states, 1, self.replay_memory_size)
 
         # Create the target network and make it identical to the policy network
         target_dqn = DQN(num_states, num_actions, self.fc1_nodes).to(device)
@@ -180,6 +180,16 @@ class Agent:
             #     mini_batch = memory.sample(self.mini_batch_size)
             #     self.optimize(mini_batch, policy_dqn, target_dqn)
 
+
+            if memory.real_size > self.mini_batch_size:
+                if self.buffer_type == 'uniform':
+                    batch = memory.sample(self.mini_batch_size)
+                    self.optimize_uniform(batch, policy_dqn, target_dqn)
+                elif self.buffer_type == 'prioritized':
+                    batch, is_weights, tree_idxs = memory.sample(self.mini_batch_size)
+                    self.optimize_prioritized(batch, is_weights, tree_idxs, policy_dqn, target_dqn, memory)
+
+
             if memory.real_size > self.mini_batch_size:
                 states, actions, rewards, next_states, dones = memory.sample(self.mini_batch_size)
                 self.optimize((states, actions, next_states, rewards, dones), policy_dqn, target_dqn)
@@ -196,7 +206,7 @@ class Agent:
 
 
     # Optimize policy network
-    def optimize(self, mini_batch, policy_dqn, target_dqn):
+    def optimize_uniform(self, mini_batch, policy_dqn, target_dqn):
 
         # Transpose the list of experiences and separate each element
         # states, actions, new_states, rewards, terminations = zip(*mini_batch)
@@ -246,6 +256,26 @@ class Agent:
         loss.backward()             # Compute gradients
         self.optimizer.step()       # Update network parameters i.e. weights and biases
 
+
+
+    def optimize_prioritized(self, batch, is_weights, tree_idxs, policy_dqn, target_dqn, memory):
+        states, actions, rewards, next_states, dones = batch
+
+        with torch.no_grad():
+            target_q = rewards + (1 - dones) * self.discount_factor_g * target_dqn(next_states).max(dim=1)[0]
+
+        current_q = policy_dqn(states).gather(dim=1, index=actions.long()).squeeze()
+        td_errors = (target_q - current_q).detach()
+        loss = (is_weights.squeeze() * (td_errors ** 2)).mean()
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        memory.update_priorities(tree_idxs, td_errors.abs().cpu())
+
+
 if __name__ == "__main__":
+    pass
     # agent = Agent("lunar_lander")
     # agent.run(render=True)  
