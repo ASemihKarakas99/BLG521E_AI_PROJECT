@@ -21,14 +21,14 @@ os.makedirs(RUNS_DIR, exist_ok=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Agent:
-    def __init__(self, hyperparameter_set):
+    def __init__(self, hyperparameter_set, buffer_type='uniform'):
         with open('hyperparameters.yml', 'r') as file:
             all_hyperparameter_sets = yaml.safe_load(file)
             hyperparameters = all_hyperparameter_sets[hyperparameter_set]
             # print(hyperparameters)
 
         self.hyperparameter_set = hyperparameter_set
-        self.buffer_type = hyperparameters.get('buffer_type', 'uniform')  # 'uniform' or 'prioritized'
+        self.buffer_type = buffer_type  # 'uniform' or 'prioritized'
         # Hyperparameters (adjustable)
         self.env_id             = hyperparameters['env_id']
         self.learning_rate_a    = hyperparameters['learning_rate_a']        # learning rate (alpha)
