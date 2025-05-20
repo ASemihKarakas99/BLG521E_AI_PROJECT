@@ -1,6 +1,6 @@
 import torch
 import gymnasium as gym
-
+import argparse
 import itertools
 import random
 import os
@@ -297,6 +297,12 @@ class Agent:
 
 
 if __name__ == "__main__":
-    pass
-    # agent = Agent("lunar_lander")
-    # agent.run(render=True)  
+
+    '''Hyperparameter Setting'''
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--hyperparameter_set", type=str, default="lunar_lander")
+    parser.add_argument("--buffer_type", type=str, default="uniform")
+    args = parser.parse_args()
+
+    agent = Agent(args.hyperparameter_set, args.buffer_type)
+    agent.run(render=True)
