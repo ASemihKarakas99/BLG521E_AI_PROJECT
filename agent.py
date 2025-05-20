@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import gymnasium as gym
 import argparse
 import itertools
@@ -196,10 +197,6 @@ class Agent:
                     self.optimize_attentive(batch, policy_dqn, target_dqn)
 
 
-            if memory.real_size > self.mini_batch_size:
-                states, actions, rewards, next_states, dones = memory.sample(self.mini_batch_size)
-                self.optimize((states, actions, next_states, rewards, dones), policy_dqn, target_dqn)
-
 
                 # Decay epsilon
                 epsilon = max(epsilon * self.epsilon_decay, self.epsilon_min)
@@ -213,54 +210,81 @@ class Agent:
 
     # Optimize policy network
     def optimize_uniform(self, mini_batch, policy_dqn, target_dqn):
+        states, actions, rewards, next_states, terminations = mini_batch  # All tensors with batch dimension
 
-        # Transpose the list of experiences and separate each element
-        # states, actions, new_states, rewards, terminations = zip(*mini_batch)
-        states, actions, new_states, rewards, terminations = mini_batch
-
-
-        # Stack tensors to create batch tensors
-        # tensor([[1,2,3]])
-        states = torch.stack(states)
-
-        actions = torch.stack(actions)
-
-        new_states = torch.stack(new_states)
-
-        rewards = torch.stack(rewards)
-        terminations = torch.tensor(terminations).float().to(device)
+        # Double-check dimensions
+        assert states.ndim == 2
+        assert actions.ndim == 1
+        assert rewards.ndim == 1
+        assert next_states.ndim == 2
+        assert terminations.ndim == 1
 
         with torch.no_grad():
-            # if self.enable_double_dqn:
-            #     best_actions_from_policy = policy_dqn(new_states).argmax(dim=1)
+            target_q = rewards + (1 - terminations) * self.discount_factor_g * \
+                    target_dqn(next_states).max(dim=1)[0]  # [B]
 
-            #     target_q = rewards + (1-terminations) * self.discount_factor_g * \
-            #                     target_dqn(new_states).gather(dim=1, index=best_actions_from_policy.unsqueeze(dim=1)).squeeze()
-            # else:
-            # Calculate target Q values (expected returns)
-            target_q = rewards + (1-terminations) * self.discount_factor_g * target_dqn(new_states).max(dim=1)[0]
-            '''
-                target_dqn(new_states)  ==> tensor([[1,2,3],[4,5,6]])
-                    .max(dim=1)         ==> torch.return_types.max(values=tensor([3,6]), indices=tensor([3, 0, 0, 1]))
-                        [0]             ==> tensor([3,6])
-            '''
+        # Get current Q values
+        current_q = policy_dqn(states).gather(1, actions.unsqueeze(1)).squeeze(1)  # [B]
 
-        # Calcuate Q values from current policy
-        current_q = policy_dqn(states).gather(dim=1, index=actions.unsqueeze(dim=1)).squeeze()
-        '''
-            policy_dqn(states)  ==> tensor([[1,2,3],[4,5,6]])
-                actions.unsqueeze(dim=1)
-                .gather(1, actions.unsqueeze(dim=1))  ==>
-                    .squeeze()                    ==>
-        '''
-
-        # Compute loss
         loss = self.loss_fn(current_q, target_q)
 
-        # Optimize the model (backpropagation)
-        self.optimizer.zero_grad()  # Clear gradients
-        loss.backward()             # Compute gradients
-        self.optimizer.step()       # Update network parameters i.e. weights and biases
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+    # def optimize_uniform(self, mini_batch, policy_dqn, target_dqn):
+
+    #     # Transpose the list of experiences and separate each element
+    #     # states, actions, new_states, rewards, terminations = zip(*mini_batch)
+    #     states, actions, new_states, rewards, terminations = mini_batch
+
+
+    #     # Stack tensors to create batch tensors
+    #     # tensor([[1,2,3]])
+    #     # states = torch.stack(states)
+
+    #     # actions = torch.stack(actions)
+
+    #     # new_states = torch.stack(new_states)
+
+    #     # rewards = torch.stack(rewards)
+    #     if not torch.is_floating_point(terminations):
+    #         terminations = terminations.float()
+            
+    #     terminations = terminations.float().to(device)
+
+
+    #     with torch.no_grad():
+    #         # if self.enable_double_dqn:
+    #         #     best_actions_from_policy = policy_dqn(new_states).argmax(dim=1)
+
+    #         #     target_q = rewards + (1-terminations) * self.discount_factor_g * \
+    #         #                     target_dqn(new_states).gather(dim=1, index=best_actions_from_policy.unsqueeze(dim=1)).squeeze()
+    #         # else:
+    #         # Calculate target Q values (expected returns)
+    #         target_q = rewards + (1-terminations) * self.discount_factor_g * target_dqn(new_states).max(dim=1)[0]
+    #         '''
+    #             target_dqn(new_states)  ==> tensor([[1,2,3],[4,5,6]])
+    #                 .max(dim=1)         ==> torch.return_types.max(values=tensor([3,6]), indices=tensor([3, 0, 0, 1]))
+    #                     [0]             ==> tensor([3,6])
+    #         '''
+
+    #     # Calcuate Q values from current policy
+    #     current_q = policy_dqn(states).gather(dim=1, index=actions.unsqueeze(dim=1)).squeeze()
+    #     '''
+    #         policy_dqn(states)  ==> tensor([[1,2,3],[4,5,6]])
+    #             actions.unsqueeze(dim=1)
+    #             .gather(1, actions.unsqueeze(dim=1))  ==>
+    #                 .squeeze()                    ==>
+    #     '''
+
+    #     # Compute loss
+    #     loss = self.loss_fn(current_q, target_q)
+
+    #     # Optimize the model (backpropagation)
+    #     self.optimizer.zero_grad()  # Clear gradients
+    #     loss.backward()             # Compute gradients
+    #     self.optimizer.step()       # Update network parameters i.e. weights and biases
 
 
 

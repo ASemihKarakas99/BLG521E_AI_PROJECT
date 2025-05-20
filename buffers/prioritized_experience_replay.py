@@ -2,8 +2,8 @@ import torch
 import random
 import numpy as np
 
-from utils import device
-from utils.tree import SumTree
+from buffers.utils import device
+from buffers.utils.tree import SumTree
 
 
 
