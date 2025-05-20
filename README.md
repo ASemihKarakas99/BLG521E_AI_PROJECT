@@ -25,6 +25,19 @@
 
 - Optional: Implementing DDQN style enhanced architectures will be implemented.
 
+## Test Steps:
+
+- Run for Cartpole:
+    - Vannila ER
+    - PER
+    - AER
+
+- Run for Lunar Landers :
+    - Vannila ER
+    - PER
+    - AER
+    
+
 ## References
 
 ### Repositories
