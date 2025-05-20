@@ -6,16 +6,16 @@
 
 - Agent class will be more generic:
   - Adding Step size / Infinite loop option
-  - Choosing Buffer type options
-  - Choosing Gym envs options
+  - Choosing Buffer type options [DONE]
+  - Choosing Gym envs options [DONE]
 
-- Attentive Experience Replay Class will be added
+- Attentive Experience Replay Class will be added [DONE]
 
 - Contribution to Attentive Experience Replay Class (BAER) will be added
 
 - Additional environments will be added:
-  - CartPole
-  - Lunar Lander 
+  - CartPole [DONE]
+  - Lunar Lander [DONE]
   - FlappyBird
   - Various Atari Games
 
