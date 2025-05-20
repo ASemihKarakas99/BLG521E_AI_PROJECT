@@ -300,8 +300,8 @@ if __name__ == "__main__":
 
     '''Hyperparameter Setting'''
     parser = argparse.ArgumentParser()
-    parser.add_argument("--hyperparameter_set", type=str, default="lunar_lander")
-    parser.add_argument("--buffer_type", type=str, default="uniform")
+    parser.add_argument("--hyperparameter_set", type=str, default="lunar_lander") # lunar_lander, cartpole
+    parser.add_argument("--buffer_type", type=str, default="uniform") # uniform, prioritized, attentive
     args = parser.parse_args()
 
     agent = Agent(args.hyperparameter_set, args.buffer_type)
