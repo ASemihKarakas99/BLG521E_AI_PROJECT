@@ -215,19 +215,19 @@ class Agent:
         terminations = torch.tensor(terminations).float().to(device)
 
         with torch.no_grad():
-            if self.enable_double_dqn:
-                best_actions_from_policy = policy_dqn(new_states).argmax(dim=1)
+            # if self.enable_double_dqn:
+            #     best_actions_from_policy = policy_dqn(new_states).argmax(dim=1)
 
-                target_q = rewards + (1-terminations) * self.discount_factor_g * \
-                                target_dqn(new_states).gather(dim=1, index=best_actions_from_policy.unsqueeze(dim=1)).squeeze()
-            else:
-                # Calculate target Q values (expected returns)
-                target_q = rewards + (1-terminations) * self.discount_factor_g * target_dqn(new_states).max(dim=1)[0]
-                '''
-                    target_dqn(new_states)  ==> tensor([[1,2,3],[4,5,6]])
-                        .max(dim=1)         ==> torch.return_types.max(values=tensor([3,6]), indices=tensor([3, 0, 0, 1]))
-                            [0]             ==> tensor([3,6])
-                '''
+            #     target_q = rewards + (1-terminations) * self.discount_factor_g * \
+            #                     target_dqn(new_states).gather(dim=1, index=best_actions_from_policy.unsqueeze(dim=1)).squeeze()
+            # else:
+            # Calculate target Q values (expected returns)
+            target_q = rewards + (1-terminations) * self.discount_factor_g * target_dqn(new_states).max(dim=1)[0]
+            '''
+                target_dqn(new_states)  ==> tensor([[1,2,3],[4,5,6]])
+                    .max(dim=1)         ==> torch.return_types.max(values=tensor([3,6]), indices=tensor([3, 0, 0, 1]))
+                        [0]             ==> tensor([3,6])
+            '''
 
         # Calcuate Q values from current policy
         current_q = policy_dqn(states).gather(dim=1, index=actions.unsqueeze(dim=1)).squeeze()
