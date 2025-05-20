@@ -1,7 +1,7 @@
 import torch
 import gymnasium as gym
 from DQN.dqn import DQN
-from buffers.experience_replay import ReplayMemory
+from buffers.replay_buffer import ReplayBuffer
 import itertools
 import random
 import os
@@ -80,7 +80,12 @@ class Agent:
         epsilon = self.epsilon_init
 
         # Initialize replay memory
-        memory = ReplayMemory(self.replay_memory_size)
+        # memory = ReplayMemory(self.replay_memory_size)
+        memory = ReplayBuffer(
+            state_size=num_states,
+            action_size=1,  # DQN uses discrete actions, so this is 1
+            buffer_size=self.replay_memory_size
+        )
 
         # Create the target network and make it identical to the policy network
         target_dqn = DQN(num_states, num_actions, self.fc1_nodes).to(device)
@@ -136,7 +141,11 @@ class Agent:
                 reward = torch.tensor(reward, dtype=torch.float, device=device)
 
                 # Save experience into memory
-                memory.append((state, action, new_state, reward, terminated))
+                # memory.append((state, action, new_state, reward, terminated))
+
+                memory.add((state.cpu().numpy(), action.cpu().numpy(), reward.cpu().numpy(),
+                            new_state.cpu().numpy(), int(terminated)))
+
 
                 # Increment step counter
                 step_count+=1
@@ -164,9 +173,14 @@ class Agent:
             #     last_graph_update_time = current_time
 
             # If enough experience has been collected
-            if len(memory)>self.mini_batch_size:
-                mini_batch = memory.sample(self.mini_batch_size)
-                self.optimize(mini_batch, policy_dqn, target_dqn)
+            # if len(memory)>self.mini_batch_size:
+            #     mini_batch = memory.sample(self.mini_batch_size)
+            #     self.optimize(mini_batch, policy_dqn, target_dqn)
+
+            if memory.real_size > self.mini_batch_size:
+                states, actions, rewards, next_states, dones = memory.sample(self.mini_batch_size)
+                self.optimize((states, actions, next_states, rewards, dones), policy_dqn, target_dqn)
+
 
                 # Decay epsilon
                 epsilon = max(epsilon * self.epsilon_decay, self.epsilon_min)
@@ -182,7 +196,9 @@ class Agent:
     def optimize(self, mini_batch, policy_dqn, target_dqn):
 
         # Transpose the list of experiences and separate each element
-        states, actions, new_states, rewards, terminations = zip(*mini_batch)
+        # states, actions, new_states, rewards, terminations = zip(*mini_batch)
+        states, actions, new_states, rewards, terminations = mini_batch
+
 
         # Stack tensors to create batch tensors
         # tensor([[1,2,3]])
