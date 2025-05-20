@@ -1,12 +1,15 @@
 import torch
 import gymnasium as gym
-from DQN.dqn import DQN
-from buffers.replay_buffer import ReplayBuffer
+
 import itertools
 import random
 import os
 import yaml
 from datetime import datetime, timedelta
+
+from DQN.dqn import DQN
+from buffers.experience_replay import ReplayBuffer
+from buffers.prioritized_experience_replay import PrioritizedReplayBuffer
 
 # For printing date and time
 DATE_FORMAT = "%m-%d %H:%M:%S"
