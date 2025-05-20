@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from DQN.dqn import DQN
 from buffers.experience_replay import ReplayBuffer
 from buffers.prioritized_experience_replay import PrioritizedReplayBuffer
+from buffers.attentive_experience_replay import AttentiveReplayBuffer
 
 # For printing date and time
 DATE_FORMAT = "%m-%d %H:%M:%S"
@@ -54,7 +55,7 @@ class Agent:
         self.GRAPH_FILE = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.png')
 
 
-    def run(self, num_episodes=10000, render=False):
+    def run(self, num_episodes=10000, render=False): # TODO: num_episodes should be used.
         start_time = datetime.now()
         # last_graph_update_time = start_time
 
@@ -89,6 +90,8 @@ class Agent:
             memory = ReplayBuffer(num_states, 1, self.replay_memory_size)
         elif self.buffer_type == 'prioritized':
             memory = PrioritizedReplayBuffer(num_states, 1, self.replay_memory_size)
+        elif self.buffer_type == 'attentive':
+            memory = AttentiveReplayBuffer(num_states, 1, self.replay_memory_size)
 
         # Create the target network and make it identical to the policy network
         target_dqn = DQN(num_states, num_actions, self.fc1_nodes).to(device)
@@ -188,6 +191,9 @@ class Agent:
                 elif self.buffer_type == 'prioritized':
                     batch, is_weights, tree_idxs = memory.sample(self.mini_batch_size)
                     self.optimize_prioritized(batch, is_weights, tree_idxs, policy_dqn, target_dqn, memory)
+                elif self.buffer_type == 'attentive':
+                    batch = memory.sample(self.mini_batch_size, current_state=state.cpu().numpy())
+                    self.optimize_attentive(batch, policy_dqn, target_dqn)
 
 
             if memory.real_size > self.mini_batch_size:
@@ -255,6 +261,21 @@ class Agent:
         self.optimizer.zero_grad()  # Clear gradients
         loss.backward()             # Compute gradients
         self.optimizer.step()       # Update network parameters i.e. weights and biases
+
+
+
+    def optimize_attentive(self, batch, policy_dqn, target_dqn):
+        states, actions, rewards, next_states, terminations = batch
+
+        with torch.no_grad():
+            target_q = rewards + (1 - terminations) * self.discount_factor_g * target_dqn(next_states).max(dim=1)[0]
+
+        current_q = policy_dqn(states).gather(dim=1, index=actions.long()).squeeze()
+        loss = self.loss_fn(current_q, target_q)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
 
 
