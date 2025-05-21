@@ -19,7 +19,7 @@ class PrioritizedReplayBuffer:
 
         # transition: state, action, reward, next_state, done
         self.state = torch.empty(buffer_size, state_size, dtype=torch.float)
-        self.action = torch.empty(buffer_size, action_size, dtype=torch.float)
+        self.action = torch.empty(buffer_size, dtype=torch.long)  # 1D tensor for discrete actions
         self.reward = torch.empty(buffer_size, dtype=torch.float)
         self.next_state = torch.empty(buffer_size, state_size, dtype=torch.float)
         self.done = torch.empty(buffer_size, dtype=torch.int)
@@ -36,7 +36,7 @@ class PrioritizedReplayBuffer:
 
         # store transition in the buffer
         self.state[self.count] = torch.as_tensor(state)
-        self.action[self.count] = torch.as_tensor(action)
+        self.action[self.count] = int(action)  # Store scalar action as integer
         self.reward[self.count] = torch.as_tensor(reward)
         self.next_state[self.count] = torch.as_tensor(next_state)
         self.done[self.count] = torch.as_tensor(done)

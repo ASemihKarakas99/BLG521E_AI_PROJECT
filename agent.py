@@ -56,7 +56,7 @@ class Agent:
         self.GRAPH_FILE = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.png')
 
 
-    def run(self, num_episodes=10000, render=False): # TODO: num_episodes should be used.
+    def run(self, num_episodes=10000, render=False): # TODO: num_episodes should be used. 3500 is cool
         start_time = datetime.now()
         # last_graph_update_time = start_time
 
@@ -309,15 +309,21 @@ class Agent:
         with torch.no_grad():
             target_q = rewards + (1 - dones) * self.discount_factor_g * target_dqn(next_states).max(dim=1)[0]
 
-        current_q = policy_dqn(states).gather(dim=1, index=actions.long()).squeeze()
-        td_errors = (target_q - current_q).detach()
+        current_q = policy_dqn(states).gather(dim=1, index=actions.long().unsqueeze(1)).squeeze()
+
+        # DO NOT detach td_errors here – keep them in graph for gradient computation
+        td_errors = target_q - current_q
+
+        # Importance-sampling weighted loss
         loss = (is_weights.squeeze() * (td_errors ** 2)).mean()
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        memory.update_priorities(tree_idxs, td_errors.abs().cpu())
+        # Detach td_errors when updating priorities (no gradient needed)
+        memory.update_priorities(tree_idxs, td_errors.abs().detach().cpu())
+
 
 
 if __name__ == "__main__":
