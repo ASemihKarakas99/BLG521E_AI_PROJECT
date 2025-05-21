@@ -81,7 +81,92 @@ def plot_comparison_cartpole_smoothed():
 
 
 
+def plot_comparison_lunar():
+    base_dir = 'training_results/lunar_lander'
+    buffer_types = ['uniform', 'prioritized', 'attentive']
+    window = 100  # rolling window size
+
+    plt.figure(figsize=(10, 6))
+
+    for buffer_type in buffer_types:
+        rewards_file = os.path.join(base_dir, buffer_type, 'rewards.csv')
+        if os.path.exists(rewards_file):
+            df = pd.read_csv(rewards_file)
+            df = df.iloc[:3000]  # Limit to first 3000 episodes
+
+            # Replace any infinite or NaN values
+            df['reward'].replace([np.inf, -np.inf], np.nan, inplace=True)
+            df['reward'].fillna(method='ffill', inplace=True)
+
+            # Optional: Clip extreme outliers
+            df['reward'] = df['reward'].clip(lower=-500, upper=500)
+
+            # Compute rolling stats
+            rolling_mean = df['reward'].rolling(window=window, min_periods=10).mean()
+            rolling_std = df['reward'].rolling(window=window, min_periods=10).std()
+
+            # Plot
+            plt.plot(df['episode'], rolling_mean, label=buffer_type.capitalize())
+            plt.fill_between(df['episode'],
+                             rolling_mean - rolling_std,
+                             rolling_mean + rolling_std,
+                             alpha=0.2)
+
+    plt.title('Comparison of Buffer Types on Lunar Lander')
+    plt.xlabel('Episode')
+    plt.ylabel(f'Average Reward ({window} episode window)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    os.makedirs('plots/lunar_lander', exist_ok=True)
+    plt.savefig('plots/lunar_lander/buffer_comparison_lunar.png')
+    plt.close()
+
+
+
+def plot_comparison_lunar_smoothed():
+    # Base directory containing results
+    base_dir = 'training_results/lunar_lander'
+    buffer_types = ['uniform', 'prioritized', 'attentive']
+
+    plt.figure(figsize=(10, 6))
+
+    for buffer_type in buffer_types:
+        rewards_file = os.path.join(base_dir, buffer_type, 'rewards.csv')
+        if os.path.exists(rewards_file):
+            df = pd.read_csv(rewards_file)
+            df = df.iloc[:3000]
+
+            # Optional: Filter out extremely negative spikes
+            df = df[df['reward'] >= -200]
+
+            # Use rolling average and std (smoothing)
+            window = 100
+            rolling_mean = df['reward'].rolling(window=window, min_periods=1).mean()
+            rolling_std = df['reward'].rolling(window=window, min_periods=1).std()
+
+            # Plot the rolling mean
+            plt.plot(df['episode'], rolling_mean, label=buffer_type.capitalize())
+
+            # Plot confidence interval (mean ± std)
+            plt.fill_between(df['episode'],
+                             rolling_mean - rolling_std,
+                             rolling_mean + rolling_std,
+                             alpha=0.2)
+
+    plt.title('Comparison of Buffer Types on Lunar Lander')
+    plt.xlabel('Episode')
+    plt.ylabel('Average Reward (100 episode window)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    os.makedirs('plots/lunar_lander', exist_ok=True)
+    plt.savefig('plots/lunar_lander/buffer_comparison_lunar_smooth.png')
+    plt.close()
+
 
 if __name__ == "__main__":
-    plot_comparison_cartpole()
-    plot_comparison_cartpole_smoothed()
+    # plot_comparison_cartpole()
+    # plot_comparison_cartpole_smoothed()
+    plot_comparison_lunar()
+    plot_comparison_lunar_smoothed()

@@ -20,13 +20,11 @@ lunar_lander:
   epsilon_init: 1
   epsilon_decay: 0.9995
   epsilon_min: 0.01
-  network_sync_rate: 100
+  network_sync_rate: 500
   learning_rate_a: 0.001 
   discount_factor_g: 0.99
-  stop_on_reward: 100000
+  stop_on_reward: 1000
   fc1_nodes: 128
   num_episodes: 3000
   early_stop_avg_window: 20
   early_stop_reward_threshold: 200.0
-
-  
