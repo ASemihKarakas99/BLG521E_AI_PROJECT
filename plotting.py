@@ -81,10 +81,65 @@ def plot_comparison_cartpole_smoothed():
 
 
 
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
 def plot_comparison_lunar():
     base_dir = 'training_results/lunar_lander'
     buffer_types = ['uniform', 'prioritized', 'attentive']
-    window = 100  # rolling window size
+    window = 50  # Rolling window size
+
+    fig, axes = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+
+    for buffer_type in buffer_types:
+        rewards_file = os.path.join(base_dir, buffer_type, 'rewards.csv')
+        if os.path.exists(rewards_file):
+            df = pd.read_csv(rewards_file)
+            df = df.iloc[:3000]
+
+            # Clean data
+            df['reward'].replace([np.inf, -np.inf], np.nan, inplace=True)
+            df['reward'].fillna(method='ffill', inplace=True)
+            df['reward'] = df['reward'].clip(lower=-500, upper=500)
+
+            # Rolling stats
+            rolling_mean = df['reward'].rolling(window=window, min_periods=10).mean()
+            rolling_std = df['reward'].rolling(window=window, min_periods=10).std()
+            rolling_max = df['reward'].rolling(window=window, min_periods=10).max()
+
+            # Top plot: Rolling average and confidence band
+            axes[0].plot(df['episode'], rolling_mean, label=buffer_type.capitalize())
+            axes[0].fill_between(df['episode'],
+                                 rolling_mean - rolling_std,
+                                 rolling_mean + rolling_std,
+                                 alpha=0.2)
+
+            # Bottom plot: Rolling max (dashed)
+            axes[1].plot(df['episode'], rolling_max, label=buffer_type.capitalize(), linestyle='--', alpha=0.7)
+
+    # Top axis formatting
+    axes[0].set_title('Rolling Average Reward (with Std Dev) - Lunar Lander')
+    axes[0].set_ylabel(f'Average Reward (window={window})')
+    axes[0].legend()
+    axes[0].grid(True, alpha=0.3)
+
+    # Bottom axis formatting
+    axes[1].set_title('Rolling Max Reward - Lunar Lander')
+    axes[1].set_xlabel('Episode')
+    axes[1].set_ylabel(f'Max Reward (window={window})')
+    axes[1].legend()
+    axes[1].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    os.makedirs('plots/lunar_lander', exist_ok=True)
+    plt.savefig('plots/lunar_lander/buffer_comparison_lunar_split.png')
+    plt.close()
+
+    base_dir = 'training_results/lunar_lander'
+    buffer_types = ['uniform', 'prioritized', 'attentive']
+    window = 50  # Reduced rolling window for faster learning trends
 
     plt.figure(figsize=(10, 6))
 
@@ -92,29 +147,33 @@ def plot_comparison_lunar():
         rewards_file = os.path.join(base_dir, buffer_type, 'rewards.csv')
         if os.path.exists(rewards_file):
             df = pd.read_csv(rewards_file)
-            df = df.iloc[:3000]  # Limit to first 3000 episodes
+            df = df.iloc[:3000]  # Trim to 3000 episodes
 
-            # Replace any infinite or NaN values
+            # Replace infs and fill NaNs
             df['reward'].replace([np.inf, -np.inf], np.nan, inplace=True)
             df['reward'].fillna(method='ffill', inplace=True)
 
-            # Optional: Clip extreme outliers
+            # Clip outliers (allow more negative rewards)
             df['reward'] = df['reward'].clip(lower=-500, upper=500)
 
-            # Compute rolling stats
+            # Rolling stats
             rolling_mean = df['reward'].rolling(window=window, min_periods=10).mean()
             rolling_std = df['reward'].rolling(window=window, min_periods=10).std()
+            rolling_max = df['reward'].rolling(window=window, min_periods=10).max()
 
-            # Plot
+            # Plot mean and confidence band
             plt.plot(df['episode'], rolling_mean, label=buffer_type.capitalize())
             plt.fill_between(df['episode'],
                              rolling_mean - rolling_std,
                              rolling_mean + rolling_std,
                              alpha=0.2)
 
+            # Plot max reward as dashed line
+            plt.plot(df['episode'], rolling_max, linestyle='--', alpha=0.5)
+
     plt.title('Comparison of Buffer Types on Lunar Lander')
     plt.xlabel('Episode')
-    plt.ylabel(f'Average Reward ({window} episode window)')
+    plt.ylabel(f'Average Reward ({window}-episode window)')
     plt.legend()
     plt.grid(True, alpha=0.3)
 
