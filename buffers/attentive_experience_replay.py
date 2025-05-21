@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from buffers.utils import device
 
 
 class AttentiveReplayBuffer:
@@ -33,25 +34,29 @@ class AttentiveReplayBuffer:
     def sample(self, batch_size, current_state):
         assert self.real_size >= batch_size, "Buffer has fewer samples than batch size"
 
-        # Sample lambda * k transitions
         k = batch_size
         lambda_k = self.lambda_factor * k
+
+        # Cap lambda_k to avoid sampling more than real_size
+        lambda_k = min(lambda_k, self.real_size)
+
         indices = np.random.choice(self.real_size, lambda_k, replace=False)
 
-        # Compute similarity between sampled states and current state
         current_state_tensor = torch.tensor(current_state, dtype=torch.float).view(1, -1)
         sampled_states = self.state[indices]
         similarities = torch.nn.functional.cosine_similarity(current_state_tensor, sampled_states)
 
-        # Select top-k similar indices
         topk_indices = similarities.topk(k).indices
         final_indices = torch.tensor(indices)[topk_indices]
 
         batch = (
-            self.state[final_indices].to(device),
-            self.action[final_indices].to(device),
-            self.reward[final_indices].to(device),
-            self.next_state[final_indices].to(device),
-            self.done[final_indices].to(device)
+            self.state[final_indices].to(device()),
+            self.action[final_indices].to(device()),
+            self.reward[final_indices].to(device()),
+            self.next_state[final_indices].to(device()),
+            self.done[final_indices].to(device())
         )
         return batch
+
+    
+
