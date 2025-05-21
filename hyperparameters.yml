@@ -10,6 +10,9 @@ cartpole:
   discount_factor_g: 0.99
   stop_on_reward: 100000
   fc1_nodes: 128
+  early_stop_avg_window: 10
+  early_stop_reward_threshold: 90000.0
+  num_episodes: 6000
 lunar_lander:
   env_id: LunarLander-v3
   replay_memory_size: 100000

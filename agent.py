@@ -17,7 +17,7 @@ from buffers.attentive_experience_replay import AttentiveReplayBuffer
 DATE_FORMAT = "%m-%d %H:%M:%S"
 
 # Directory for saving run info
-RUNS_DIR = "runs"
+RUNS_DIR = "training_results"
 os.makedirs(RUNS_DIR, exist_ok=True)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,18 +32,21 @@ class Agent:
         self.hyperparameter_set = hyperparameter_set
         self.buffer_type = buffer_type  # 'uniform' or 'prioritized'
         # Hyperparameters (adjustable)
-        self.env_id             = hyperparameters['env_id']
-        self.learning_rate_a    = hyperparameters['learning_rate_a']        # learning rate (alpha)
-        self.discount_factor_g  = hyperparameters['discount_factor_g']      # discount rate (gamma)
-        self.network_sync_rate  = hyperparameters['network_sync_rate']      # number of steps the agent takes before syncing the policy and target network
-        self.replay_memory_size = hyperparameters['replay_memory_size']     # size of replay memory
-        self.mini_batch_size    = hyperparameters['mini_batch_size']        # size of the training data set sampled from the replay memory
-        self.epsilon_init       = hyperparameters['epsilon_init']           # 1 = 100% random actions
-        self.epsilon_decay      = hyperparameters['epsilon_decay']          # epsilon decay rate
-        self.epsilon_min        = hyperparameters['epsilon_min']            # minimum epsilon value
-        self.stop_on_reward     = hyperparameters['stop_on_reward']         # stop training after reaching this number of rewards
-        self.fc1_nodes          = hyperparameters['fc1_nodes']
-        self.env_make_params    = hyperparameters.get('env_make_params',{}) # Get optional environment-specific parameters, default to empty dict
+        self.env_id                    = hyperparameters['env_id']
+        self.learning_rate_a           = hyperparameters['learning_rate_a']        # learning rate (alpha)
+        self.discount_factor_g         = hyperparameters['discount_factor_g']      # discount rate (gamma)
+        self.network_sync_rate         = hyperparameters['network_sync_rate']      # number of steps the agent takes before syncing the policy and target network
+        self.replay_memory_size        = hyperparameters['replay_memory_size']     # size of replay memory
+        self.mini_batch_size           = hyperparameters['mini_batch_size']        # size of the training data set sampled from the replay memory
+        self.epsilon_init              = hyperparameters['epsilon_init']           # 1 = 100% random actions
+        self.epsilon_decay             = hyperparameters['epsilon_decay']          # epsilon decay rate
+        self.epsilon_min               = hyperparameters['epsilon_min']            # minimum epsilon value
+        self.stop_on_reward            = hyperparameters['stop_on_reward']         # stop training after reaching this number of rewards
+        self.fc1_nodes                 = hyperparameters['fc1_nodes']
+        self.env_make_params           = hyperparameters.get('env_make_params',{}) # Get optional environment-specific parameters, default to empty dict
+        self.early_stop_avg_window     = hyperparameters.get('early_stop_avg_window')   # Moving average window size
+        self.es_reward_threshold       = hyperparameters.get('early_stop_reward_threshold')  
+        self.num_episodes              = hyperparameters.get('num_episodes')
 
 
         # Neural Network
@@ -51,12 +54,23 @@ class Agent:
         self.optimizer = None                # NN Optimizer. Initialize later.
 
         # Path to Run info
-        self.LOG_FILE   = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.log')
-        self.MODEL_FILE = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.pt')
-        self.GRAPH_FILE = os.path.join(RUNS_DIR, f'{self.hyperparameter_set}.png')
+        self.RUN_DIR = os.path.join(RUNS_DIR, self.hyperparameter_set, self.buffer_type)
+        if os.path.exists(self.RUN_DIR):
+            raise FileExistsError(f"Run directory already exists: {self.RUN_DIR}")
+        else:
+            os.makedirs(self.RUN_DIR)
 
 
-    def run(self, num_episodes=10000, render=False): # TODO: num_episodes should be used. 3500 is cool
+        self.LOG_FILE   = os.path.join(self.RUN_DIR, 'training.log')
+        self.MODEL_FILE = os.path.join(self.RUN_DIR, 'model.pt')
+        self.REWARD_FILE = os.path.join(self.RUN_DIR, 'rewards.csv')
+        self.GRAPH_FILE = os.path.join(self.RUN_DIR, f'{self.hyperparameter_set}.png')
+
+
+    def run(self, num_episodes=None, render=False): 
+        if num_episodes is None:
+            num_episodes = self.num_episodes
+            
         start_time = datetime.now()
         # last_graph_update_time = start_time
 
@@ -110,9 +124,10 @@ class Agent:
         # Track best reward
         best_reward = -9999999
 
-
+        print(f"Early stopping if average reward over last {self.early_stop_avg_window} episodes exceeds {self.es_reward_threshold}")
         # Train INDEFINITELY, manually stop the run when you are satisfied (or unsatisfied) with the results
-        for episode in itertools.count():
+        # for episode in itertools.count(): # For infinite training
+        for episode in range(num_episodes):
 
             state, _ = env.reset()  # Initialize environment. Reset returns (state,info).
             state = torch.tensor(state, dtype=torch.float, device=device) # Convert state to tensor directly on device
@@ -163,6 +178,17 @@ class Agent:
             # Keep track of the rewards collected per episode.
             rewards_per_episode.append(episode_reward)
 
+            # Check early stopping condition
+            if len(rewards_per_episode) >= self.early_stop_avg_window:
+                recent_avg = sum(rewards_per_episode[-self.early_stop_avg_window:]) / self.early_stop_avg_window
+                if recent_avg >= self.es_reward_threshold:
+                    log_message = f"{datetime.now().strftime(DATE_FORMAT)}: Early stopping triggered at episode {episode} with average reward {recent_avg:.2f}"
+                    print(log_message)
+                    with open(self.LOG_FILE, 'a') as file:
+                        file.write(log_message + '\n')
+                    break
+
+
             # Save model when new best reward is obtained.
             if episode_reward > best_reward:
                 log_message = f"{datetime.now().strftime(DATE_FORMAT)}: New best reward {episode_reward:0.1f} ({(episode_reward-best_reward)/best_reward*100:+.1f}%) at episode {episode}, saving model..."
@@ -207,6 +233,11 @@ class Agent:
                     target_dqn.load_state_dict(policy_dqn.state_dict())
                     step_count=0
 
+
+        with open(self.REWARD_FILE, 'w') as f:
+            f.write("episode,reward\n")
+            for idx, reward in enumerate(rewards_per_episode):
+                f.write(f"{idx},{reward}\n")
 
     # Optimize policy network
     def optimize_uniform(self, mini_batch, policy_dqn, target_dqn):
@@ -280,4 +311,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     agent = Agent(args.hyperparameter_set, args.buffer_type)
-    agent.run(render=True)
+    agent.run(render=False) # Can be changed to True to visualize the agent
