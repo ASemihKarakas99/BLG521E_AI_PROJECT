@@ -36,7 +36,8 @@ def plot_comparison_cartpole():
     plt.grid(True, alpha=0.3)
     
     # Save plot
-    plt.savefig('plots/buffer_comparison_cartpole.png')
+    os.makedirs('plots/cartpole', exist_ok=True)
+    plt.savefig('plots/cartpole/buffer_comparison_cartpole.png')
     plt.close()
 
 
@@ -74,8 +75,8 @@ def plot_comparison_cartpole_smoothed():
     plt.legend()
     plt.grid(True, alpha=0.3)
 
-    os.makedirs('plots', exist_ok=True)
-    plt.savefig('plots/buffer_comparison_cartpole_smooth.png')
+    # os.makedirs('plots/cartpole', exist_ok=True)
+    plt.savefig('plots/cartpole/buffer_comparison_cartpole_smooth.png')
     plt.close()
 
 
