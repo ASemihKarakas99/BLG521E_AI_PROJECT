@@ -38,7 +38,7 @@ This project serves as a comprehensive exploration of experience replay techniqu
 - Buffers will be updated according to [this repo](https://github.com/Howuhh/prioritized_experience_replay/blob/main/memory/buffer.py)
 
 - Agent class will be more generic:
-  - Adding Step size / Infinite loop option
+  - Adding Step size / Infinite loop option [DONE]
   - Choosing Buffer type options [DONE]
   - Choosing Gym envs options [DONE]
 
@@ -54,22 +54,30 @@ This project serves as a comprehensive exploration of experience replay techniqu
 
 - DQN Archirecture will be adjsuted so that it aligns with paper implementation.
 
-- Tests, Results, and plotting will be added.
+- Tests, Results, and plotting will be added. [DONE]
 
 - Optional: Implementing DDQN style enhanced architectures will be implemented.
 
 ## Test Steps:
 
 - Run for Cartpole:
-    - Vannila ER
-    - PER
-    - AER
+    - Vannila ER [DONE]
+    - PER [DONE]
+    - AER [DONE]
+    - BAER [DONE]
 
 - Run for Lunar Landers :
-    - Vannila ER
-    - PER
-    - AER
-    
+    - Vannila ER [DONE]
+    - PER [DONE]
+    - AER [DONE]
+    - BAER [DONE]
+
+- Run for FlappyBird:
+    - Vannila ER [DONE]
+    - PER [DONE]
+    - AER [DONE]
+    - BAER [DONE]
+
 
 ## References
 
