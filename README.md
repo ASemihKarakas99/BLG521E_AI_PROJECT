@@ -32,6 +32,36 @@ Overall, BAER represents a significant advancement in experience replay strategi
 This project serves as a comprehensive exploration of experience replay techniques, providing valuable insights and tools for researchers and practitioners in the field of reinforcement learning.
 
 
+## How to Run
+
+To run the project and experiment with different experience replay strategies, follow these steps:
+
+ **Run Experiments**:
+   You can run experiments for different environments and buffer types using the command line interface. Here are some examples:
+
+   - **CartPole with Vanilla Experience Replay**:
+     ```bash
+     python agent.py --hyperparameter_set cartpole --buffer_type uniform
+     ```
+
+   - **Lunar Lander with Prioritized Experience Replay**:
+     ```bash
+     python agent.py --hyperparameter_set lunar_lander --buffer_type prioritized
+     ```
+   - **Lunar Lander with Balanced Attentive Experience Replay**:
+     ```bash
+     python agent_baer.py --hyperparameter_set lunar_lander --buffer_type aer
+     ```
+   - **Lunar Lander with Balanced Attentive Experience Replay**:
+     ```bash
+     python agent_baer.py --hyperparameter_set lunar_lander --buffer_type baer
+     ```
+
+ **Visualize Results**:
+   After running the experiments, you can visualize the results using the plotting scripts. For example:
+   ```bash
+   python plotting.py
+   ```
 
 ## TODO
 
