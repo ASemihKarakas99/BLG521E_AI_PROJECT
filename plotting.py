@@ -8,7 +8,7 @@ def plot_comparison_cartpole():
     base_dir = 'training_results/cartpole'
     
     # Buffer types to compare
-    buffer_types = ['uniform', 'prioritized', 'attentive']
+    buffer_types = ['uniform', 'prioritized', 'attentive', 'baer']
     
     # Setup plot
     plt.figure(figsize=(10, 6))
@@ -43,7 +43,7 @@ def plot_comparison_cartpole():
 
 def plot_comparison_cartpole_smoothed():
     base_dir = 'training_results/cartpole'
-    buffer_types = ['uniform', 'prioritized', 'attentive']
+    buffer_types = ['uniform', 'prioritized', 'attentive', 'baer']
     plt.figure(figsize=(10, 6))
 
     bin_size = 100  # Episodes per bin
@@ -225,7 +225,7 @@ def plot_comparison_lunar_smoothed():
 
 
 if __name__ == "__main__":
-    # plot_comparison_cartpole()
-    # plot_comparison_cartpole_smoothed()
-    plot_comparison_lunar()
-    plot_comparison_lunar_smoothed()
+    plot_comparison_cartpole()
+    plot_comparison_cartpole_smoothed()
+    # plot_comparison_lunar()
+    # plot_comparison_lunar_smoothed()

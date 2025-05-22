@@ -14,3 +14,7 @@ class DQN(nn.Module):
         Q = self.output(x)
 
         return Q
+
+    def get_embedding(self, x): # For Balanced Attentive Experience Replay
+        return torch.relu(self.fc1(x)) 
+    
