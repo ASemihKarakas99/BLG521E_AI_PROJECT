@@ -57,6 +57,11 @@ To run the project and experiment with different experience replay strategies, f
      python agent_baer.py --hyperparameter_set lunar_lander --buffer_type baer
      ```
 
+   - **Flappy Bird with Experience Replay**:
+     ```bash
+     python agent_baer.py --hyperparameter_set flappybird --buffer_type uniform
+     ```
+
  **Visualize Results**:
    After running the experiments, you can visualize the results using the plotting scripts. For example:
    ```bash
