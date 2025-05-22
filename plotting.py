@@ -224,8 +224,51 @@ def plot_comparison_lunar_smoothed():
     plt.close()
 
 
+def plot_comparison_flappybird_smoothed():
+    # Base directory containing results
+    base_dir = 'training_results/flappybird'
+    buffer_types = ['uniform', 'prioritized', 'attentive', 'baer']
+
+    plt.figure(figsize=(10, 6))
+
+    for buffer_type in buffer_types:
+        rewards_file = os.path.join(base_dir, buffer_type, 'rewards.csv')
+        if os.path.exists(rewards_file):
+            df = pd.read_csv(rewards_file)
+            df = df.iloc[:1000000]  # Assuming a large number of episodes for FlappyBird
+
+            # Optional: Filter out extremely negative spikes
+            df = df[df['reward'] >= -200]
+
+            # Use rolling average and std (smoothing)
+            window = 1000  # Larger window for smoothing due to more episodes
+            rolling_mean = df['reward'].rolling(window=window, min_periods=1).mean()
+            rolling_std = df['reward'].rolling(window=window, min_periods=1).std()
+
+            # Plot the rolling mean
+            plt.plot(df['episode'], rolling_mean, label=buffer_type.capitalize())
+
+            # Plot confidence interval (mean ± std)
+            plt.fill_between(df['episode'],
+                             rolling_mean - rolling_std,
+                             rolling_mean + rolling_std,
+                             alpha=0.2)
+
+    plt.title('Comparison of Buffer Types on Flappy Bird')
+    plt.xlabel('Episode')
+    plt.ylabel('Average Reward (1000 episode window)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    os.makedirs('plots/flappybird', exist_ok=True)
+    plt.savefig('plots/flappybird/buffer_comparison_flappybird_smooth.png')
+    plt.close()
+
+
+
 if __name__ == "__main__":
     # plot_comparison_cartpole()
     # plot_comparison_cartpole_smoothed()
-    plot_comparison_lunar()
-    plot_comparison_lunar_smoothed()
+    # plot_comparison_lunar()
+    # plot_comparison_lunar_smoothed()
+    plot_comparison_flappybird_smoothed()   
