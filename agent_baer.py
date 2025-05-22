@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import gymnasium as gym
+import flappy_bird_gymnasium
 import argparse
 import itertools
 import random
