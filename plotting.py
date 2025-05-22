@@ -88,7 +88,7 @@ import numpy as np
 
 def plot_comparison_lunar():
     base_dir = 'training_results/lunar_lander'
-    buffer_types = ['uniform', 'prioritized', 'attentive']
+    buffer_types = ['uniform', 'prioritized', 'attentive', 'baer']
     window = 50  # Rolling window size
 
     fig, axes = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
@@ -186,7 +186,7 @@ def plot_comparison_lunar():
 def plot_comparison_lunar_smoothed():
     # Base directory containing results
     base_dir = 'training_results/lunar_lander'
-    buffer_types = ['uniform', 'prioritized', 'attentive']
+    buffer_types = ['uniform', 'prioritized', 'attentive', 'baer']
 
     plt.figure(figsize=(10, 6))
 
@@ -225,7 +225,7 @@ def plot_comparison_lunar_smoothed():
 
 
 if __name__ == "__main__":
-    plot_comparison_cartpole()
-    plot_comparison_cartpole_smoothed()
-    # plot_comparison_lunar()
-    # plot_comparison_lunar_smoothed()
+    # plot_comparison_cartpole()
+    # plot_comparison_cartpole_smoothed()
+    plot_comparison_lunar()
+    plot_comparison_lunar_smoothed()
